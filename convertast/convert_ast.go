@@ -185,6 +185,19 @@ func convExpr(e syntax.Expr) build.Expr {
 				Comments:    convComments(e.Comments())}
 		}
 	case *syntax.Ident:
+		// perform the identifier translation from buck to bazel
+		translation_table := map[string]string {
+			"cpp_binary" : "cc_binary",
+			"cpp_library" : "cc_library",
+			"cpp_unittest" : "cc_test",
+			"headers" : "hdrs",
+			"allocator" : "malloc",
+		}
+		new_name, exists := translation_table[e.Name]
+		
+		if exists {
+			e.Name = new_name
+		}
 		return &build.Ident{Name: e.Name, Comments: convComments(e.Comments())}
 	case *syntax.BinaryExpr:
 		_, lhsEnd := e.X.Span()
@@ -214,6 +227,7 @@ func convExpr(e syntax.Expr) build.Expr {
 		for _, a := range e.Args {
 			args = append(args, convExpr(a))
 		}
+		// fmt.Printf("%v\n", e.Fn)
 		return &build.CallExpr{
 			X:            convExpr(e.Fn),
 			List:         args,
